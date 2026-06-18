@@ -4,7 +4,7 @@ use axum::{
     Router,
     extract::{Path, Query, State},
     http::StatusCode,
-    response::{Html, IntoResponse, Response},
+    response::Html,
     routing::get,
 };
 use clap::Parser;
@@ -208,9 +208,15 @@ async fn serve_image_by_id(
 
 impl Args {
     fn current_image_path(&self) -> PathBuf {
-        let today = Zoned::now().date();
-        // let seed = ((today.day_of_year() as u64) << 16) + (today.year() as u64);
+        #[cfg(not(debug_assertions))]
+        let seed = {
+            let today = Zoned::now().date();
+            ((today.day_of_year() as u64) << 16) + (today.year() as u64)
+        };
+
+        #[cfg(debug_assertions)]
         let seed = Zoned::now().time().second() as u64;
+
         let mut rng = StdRng::seed_from_u64(seed);
 
         self.image_paths().choose(&mut rng).unwrap().clone()
